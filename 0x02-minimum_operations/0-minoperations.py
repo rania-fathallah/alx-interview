@@ -2,9 +2,10 @@
 '''The minimum operations coding challenge.
 '''
 
+
 def minOperations(n):
     if (n <= 1) or (not isinstance(n, int)):
-        return 0  # If n <= 1, or n is not int it's impossible or unnecessary to reach n H's
+        return 0
 
     operations = 0
     divisor = 2  # Start from the smallest possible divisor
