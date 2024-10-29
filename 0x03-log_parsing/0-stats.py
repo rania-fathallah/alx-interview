@@ -25,8 +25,15 @@ def parse_line(line):
         'status_code': 0,
         'file_size': 0,
     }
-    pattern = r'^(?P<ip>\S+) - \[(?P<date>[^\]]+)\] "(?P<method>\S+) (?P<path>\S+) HTTP/\d\.\d" (?P<status>\d{3}) (?P<size>\d+)$'
-    match = re.match(pattern, line.strip())
+    fp = (
+        r'\s*(?P<ip>\S+)\s*',
+        r'\s*\[(?P<date>\d+\-\d+\-\d+ \d+:\d+:\d+\.\d+)\]',
+        r'\s*"(?P<request>[^"]*)"\s*',
+        r'\s*(?P<status_code>\S+)',
+        r'\s*(?P<file_size>\d+)'
+    )
+    log_fmt = '{}\\-{}{}{}{}\\s*'.format(fp[0], fp[1], fp[2], fp[3], fp[4])
+    match = re.fullmatch(log_fmt, line)
     if match:
         status_code = match.group('status')
         file_size = int(match.group('size'))
