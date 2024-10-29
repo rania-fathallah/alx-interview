@@ -24,7 +24,7 @@ def parse_line(line):
     pattern = r'^(?P<ip>\S+) - \[(?P<date>[^\]]+)\] "(?P<method>\S+) (?P<path>\S+) HTTP/\d\.\d" (?P<status>\d{3}) (?P<size>\d+)$'
     match = re.match(pattern, line.strip())
     if match:
-        return int(match.group('status')), int(match.group('size'))
+        return (match.group('status'), int(match.group('size')))
     return None 
 
 def print_statistics():
@@ -49,7 +49,7 @@ for line in sys.stdin:
     if parsed:  # Only process if parsed is not None
         status, size = parsed  # Unpacking the returned status and size
         total_size += size
-        status_codes_stats[str(status)] += 1
+        status_codes_stats[status] += 1
         lines_processed += 1
 
         # Print statistics every 10 lines
