@@ -1,30 +1,12 @@
 #!/usr/bin/python3
 '''A script for parsing HTTP request logs.
 '''
-import sys
-import signal
 import re
 
-# Global variables to store metrics
-total_size = 0
-status_codes_stats = {
-    '200': 0,
-    '301': 0,
-    '400': 0,
-    '401': 0,
-    '403': 0,
-    '404': 0,
-    '405': 0,
-    '500': 0,
-}
-lines_processed = 0
-print_stats_flag = False  # Flag to indicate when to print stats
 
-def parse_line(line):
-    info = {
-        'status_code': 0,
-        'file_size': 0,
-    }
+def extract_input(input_line):
+    '''Extracts sections of a line of an HTTP request log.
+    '''
     fp = (
         r'\s*(?P<ip>\S+)\s*',
         r'\s*\[(?P<date>\d+\-\d+\-\d+ \d+:\d+:\d+\.\d+)\]',
@@ -32,47 +14,76 @@ def parse_line(line):
         r'\s*(?P<status_code>\S+)',
         r'\s*(?P<file_size>\d+)'
     )
+    info = {
+        'status_code': 0,
+        'file_size': 0,
+    }
     log_fmt = '{}\\-{}{}{}{}\\s*'.format(fp[0], fp[1], fp[2], fp[3], fp[4])
-    match = re.fullmatch(log_fmt, line)
-    if match:
-        status_code = match.group('status_code')
-        file_size = int(match.group('file_size'))
+    resp_match = re.fullmatch(log_fmt, input_line)
+    if resp_match is not None:
+        status_code = resp_match.group('status_code')
+        file_size = int(resp_match.group('file_size'))
         info['status_code'] = status_code
         info['file_size'] = file_size
-        return info
-    return None 
+    return info
 
-def print_statistics():
-    print(f"Total file size: {total_size}")
-    for code in sorted(status_codes_stats.keys()):
-        count = status_codes_stats[code]
-        if count > 0:
-            print(f"{code}: {count}")
 
-def signal_handler(sig, frame):
-    global print_stats_flag
-    print_stats_flag = True  # Set the flag instead of exiting
+def print_statistics(total_file_size, status_codes_stats):
+    '''Prints the accumulated statistics of the HTTP request log.
+    '''
+    print('File size: {:d}'.format(total_file_size), flush=True)
+    for status_code in sorted(status_codes_stats.keys()):
+        num = status_codes_stats.get(status_code, 0)
+        if num > 0:
+            print('{:s}: {:d}'.format(status_code, num), flush=True)
 
-# Register the signal handler for SIGINT (CTRL + C)
-signal.signal(signal.SIGINT, signal_handler)
+
+def update_metrics(line, total_file_size, status_codes_stats):
+    '''Updates the metrics from a given HTTP request log.
+
+    Args:
+        line (str): The line of input from which to retrieve the metrics.
+
+    Returns:
+        int: The new total file size.
+    '''
+    line_info = extract_input(line)
+    status_code = line_info.get('status_code', '0')
+    if status_code in status_codes_stats.keys():
+        status_codes_stats[status_code] += 1
+    return total_file_size + line_info['file_size']
+
 
 def run():
-    global total_size, lines_processed  # Declare globals to modify them
-    # Reading from stdin line by line
-    for line in sys.stdin:
-        parsed = parse_line(line)
-        if parsed:  # Only process if parsed is not None
-            status = parsed['status_code']  # Access the status code
-            size = parsed['file_size']  # Access the file size
-            total_size += size
-            status_codes_stats[status] += 1
-            lines_processed += 1
+    '''Starts the log parser.
+    '''
+    line_num = 0
+    total_file_size = 0
+    status_codes_stats = {
+        '200': 0,
+        '301': 0,
+        '400': 0,
+        '401': 0,
+        '403': 0,
+        '404': 0,
+        '405': 0,
+        '500': 0,
+    }
+    try:
+        while True:
+            line = input()
+            total_file_size = update_metrics(
+                line,
+                total_file_size,
+                status_codes_stats,
+            )
+            line_num += 1
+            if line_num % 10 == 0:
+                print_statistics(total_file_size, status_codes_stats)
+    except (KeyboardInterrupt, EOFError):
+        print_statistics(total_file_size, status_codes_stats)
 
-            # Print statistics every 10 lines or if the flag is set
-            if lines_processed % 10 == 0 or print_stats_flag:
-                print_statistics()
-                if print_stats_flag:  # Reset the flag after printing
-                    print_stats_flag = False
 
 if __name__ == '__main__':
     run()
+    
