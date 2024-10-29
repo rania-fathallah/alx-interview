@@ -5,7 +5,6 @@ import sys
 import signal
 import re
 
-
 # Global variables to store metrics
 total_size = 0
 status_codes_stats = {
@@ -19,6 +18,7 @@ status_codes_stats = {
     '500': 0,
 }
 lines_processed = 0
+print_stats_flag = False  # Flag to indicate when to print stats
 
 def parse_line(line):
     info = {
@@ -56,16 +56,23 @@ def signal_handler(sig, frame):
 # Register the signal handler for SIGINT (CTRL + C)
 signal.signal(signal.SIGINT, signal_handler)
 
-# Reading from stdin line by line
-for line in sys.stdin:
-    parsed = parse_line(line)
-    if parsed:  # Only process if parsed is not None
-        status = parsed['status_code']  # Access the status code
-        size = parsed['file_size']  # Access the file size
-        total_size += size
-        status_codes_stats[status] += 1
-        lines_processed += 1
+def run():
+    global total_size, lines_processed  # Declare globals to modify them
+    # Reading from stdin line by line
+    for line in sys.stdin:
+        parsed = parse_line(line)
+        if parsed:  # Only process if parsed is not None
+            status = parsed['status_code']  # Access the status code
+            size = parsed['file_size']  # Access the file size
+            total_size += size
+            status_codes_stats[status] += 1
+            lines_processed += 1
 
-        # Print statistics every 10 lines
-        if lines_processed % 10 == 0:
-            print_statistics()
+            # Print statistics every 10 lines or if the flag is set
+            if lines_processed % 10 == 0 or print_stats_flag:
+                print_statistics()
+                if print_stats_flag:  # Reset the flag after printing
+                    print_stats_flag = False
+
+if __name__ == '__main__':
+    run()
