@@ -35,8 +35,8 @@ def parse_line(line):
     log_fmt = '{}\\-{}{}{}{}\\s*'.format(fp[0], fp[1], fp[2], fp[3], fp[4])
     match = re.fullmatch(log_fmt, line)
     if match:
-        status_code = match.group('status')
-        file_size = int(match.group('size'))
+        status_code = match.group('status_code')
+        file_size = int(match.group('file_size'))
         info['status_code'] = status_code
         info['file_size'] = file_size
         return info
