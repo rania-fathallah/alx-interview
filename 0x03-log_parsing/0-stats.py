@@ -21,10 +21,18 @@ status_codes_stats = {
 lines_processed = 0
 
 def parse_line(line):
+    info = {
+        'status_code': 0,
+        'file_size': 0,
+    }
     pattern = r'^(?P<ip>\S+) - \[(?P<date>[^\]]+)\] "(?P<method>\S+) (?P<path>\S+) HTTP/\d\.\d" (?P<status>\d{3}) (?P<size>\d+)$'
     match = re.match(pattern, line.strip())
     if match:
-        return (match.group('status'), int(match.group('size')))
+        status_code = match.group('status')
+        file_size = int(match.group('size'))
+        info['status_code'] = status_code
+        info['file_size'] = file_size
+        return info
     return None 
 
 def print_statistics():
@@ -41,13 +49,12 @@ def signal_handler(sig, frame):
 # Register the signal handler for SIGINT (CTRL + C)
 signal.signal(signal.SIGINT, signal_handler)
 
-print("Reading from stdin (press CTRL+C to print statistics and continue):")
-
 # Reading from stdin line by line
 for line in sys.stdin:
     parsed = parse_line(line)
     if parsed:  # Only process if parsed is not None
-        status, size = parsed  # Unpacking the returned status and size
+        status = parsed['status_code']  # Access the status code
+        size = parsed['file_size']  # Access the file size
         total_size += size
         status_codes_stats[status] += 1
         lines_processed += 1
