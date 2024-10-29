@@ -17,5 +17,3 @@ def minOperations(n):
         divisor += 1  # Move to the next potential divisor
 
     return operations
-    
-    
