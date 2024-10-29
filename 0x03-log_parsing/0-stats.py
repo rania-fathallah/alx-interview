@@ -19,14 +19,13 @@ status_codes_stats = {
     '500': 0,
 }
 lines_processed = 0
-print_stats_flag = False
 
 def parse_line(line):
     pattern = r'^(?P<ip>\S+) - \[(?P<date>[^\]]+)\] "(?P<method>\S+) (?P<path>\S+) HTTP/\d\.\d" (?P<status>\d{3}) (?P<size>\d+)$'
     match = re.match(pattern, line.strip())
     if match:
         return match.group('status'), int(match.group('size'))
-    return None  # Return None if the line does not match the pattern
+    return None 
 
 def print_statistics():
     print(f"Total file size: {total_size}")
@@ -56,8 +55,3 @@ for line in sys.stdin:
         # Print statistics every 10 lines
         if lines_processed % 10 == 0:
             print_statistics()
-    
-    # If the print_stats_flag is set, print stats and reset the flag
-    if print_stats_flag:
-        print_statistics()
-        print_stats_flag = False  # Reset the flag to continue processing
